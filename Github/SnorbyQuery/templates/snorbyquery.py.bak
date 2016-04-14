@@ -1,0 +1,58 @@
+import MySQLdb  # DB Connector
+import ipaddress  # Transform Decimal IP to IPv4
+from IPy import IP  # Know if the IP is PUBLIC OR PRIVATE
+from time import sleep
+
+DBH = '192.168.1.101'
+DBU = 'snorby'
+DBP = 'mysqlpassword'
+DBN = 'snorby'
+ip_src,ip_dst,ip_src_v4,ip_dst_v4,block_ip= [],[],[],[],[]
+
+def connect():
+	global cursor
+	try:
+		con_string = [DBH,DBU,DBP,DBN]
+		conx = MySQLdb.connect(*con_string) 
+		cursor = conx.cursor()
+		cursor.execute('SELECT TABLE_SCHEMA FROM INFORMATION_SCHEMA.TABLES')
+		cursor.fetchone()
+		print "Sucessfully connection to snorby DB"
+		return conx, cursor
+	except Exception, e:
+		print "Unable to connect to specific database",e
+		exit(0)
+					
+def know_attackers_ip():
+	#obtengo conx y cursor de la funcion connect
+	conx,cursor = connect()
+	cursor.execute('SELECT ip_src,ip_dst FROM aggregated_events WHERE number_of_events > 15 ORDER BY number_of_events DESC')
+	data = cursor.fetchall()
+	for ips in data:
+		ip_src.append(repr(ips[0]).strip('L').strip()) # ip origen en formato decimal
+		ip_dst.append(repr(ips[1]).strip('L').strip()) # ip destino en formato decimal	
+		#TRANSFORM IP in IPV4 FORMAT: xxx.xxx.xxx.xxx
+	for ip_in_decimal in ip_src:
+		transforming = ipaddress.IPv4Address(int(ip_in_decimal))
+		ip_src_v4.append(str(transforming))		
+	for ip_in_decimal in ip_dst:
+		transforming = ipaddress.IPv4Address(int(ip_in_decimal))
+		ip_dst_v4.append(str(transforming))
+	for view_type in ip_src_v4:
+		public_or_private(view_type)
+	for view_type in ip_dst_v4:
+		public_or_private(view_type)
+					
+def public_or_private(ip):
+	if IP(ip).iptype() == 'PRIVATE' or IP(ip).iptype() == 'RESERVED' :
+		return
+	else:
+		block_ip.append(ip)
+	
+def main():
+	know_attackers_ip()
+	print block_ip
+	
+if __name__ == '__main__':
+	main()
+	
