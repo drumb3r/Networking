@@ -1,0 +1,67 @@
+import pyodbc
+from time import sleep
+count = 0
+Id = []
+Log = []
+dict = {}
+DSN = 'odbc-dbname'
+USER = 'default'
+PASS = 'J18688973.'
+DATABASE = 'Main_Data'
+
+# Connect Database
+try:
+	con_string = 'DSN=%s; UID=%s; PWD=%s; DATABASE=%s'%(DSN,USER,PASS,DATABASE)
+	conx = pyodbc.connect(con_string)
+	cursor = conx.cursor()
+	cursor.execute('SELECT * FROM INFORMATION_SCHEMA.TABLES')
+	rol = cursor.fetchone()
+	database  = rol[0]
+	print "Succesfully connect to: %s DB \n"%database
+except:
+	print "Unable to connect DB, Check Settings"
+	
+#define total registered users
+cursor.execute('SELECT PER_CODE AS USER_ID FROM HR_PERSONNEL')
+row_len = cursor.fetchall()
+print "There are %s registers"%(len(row_len))
+
+#running from each row in DB
+print "REGISTERED USERS IN DB: "
+for row in cursor.execute('SELECT PER_CODE AS ID, PER_NAME, DEPT_NAME AS DEPARTAMENTO FROM HR_PERSONNEL'):	
+	print repr(row.ID).strip("u'").strip().ljust(6), repr(row.PER_NAME).strip("u'").strip().ljust(24), \
+	repr(row.DEPARTAMENTO).strip("u'").strip().ljust(20)
+	user_NAME = repr(row.PER_NAME).strip("u'").strip()
+	user_DEP = repr(row.DEPARTAMENTO).strip("u'").strip()
+	
+#Finding Time Access
+for row in cursor.execute('SELECT PER_CODE AS ID, DATE_TIME AS LOGIN FROM TA_RECORD_INFO'):
+	print repr(row.ID).strip("u'").strip().ljust(4), \
+	repr(row.LOGIN).strip("u'").strip().ljust(4)
+	user_ID = repr(row.ID).strip("u'").strip()
+	user_Login = repr(row.LOGIN).strip("u'").strip()	
+	
+	if dict.has_key(user_ID):
+		if user_Login not in dict[user_ID]:
+			dict[user_ID].append(user_Login)
+	else:
+		dict[user_ID] = []
+		dict[user_ID].append(user_Login)
+		
+
+
+			
+
+			
+
+
+	
+	
+
+
+
+
+	
+
+
+
